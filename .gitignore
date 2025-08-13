@@ -131,3 +131,4 @@ dist
 config.js
 .vscode/
 .dccache
+.idea/
