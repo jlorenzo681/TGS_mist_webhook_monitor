@@ -3,7 +3,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
     selector: 'login-2fa',
-    templateUrl: 'login-2fa.html',
+    templateUrl: 'login-2FA.html',
 })
 export class TwoFactorDialog {
     public twoFactor!: string;

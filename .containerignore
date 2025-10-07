@@ -1,0 +1,33 @@
+# Node modules
+**/node_modules
+**/npm-debug.log
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Angular build artifacts
+mist-webhook-monitor/dist
+mist-webhook-monitor/.angular
+
+# Documentation
+README.md
+*.md
+._readme
+
+# Environment and config files (should be mounted at runtime)
+.env
+src/config.js
+
+# Build scripts
+angular-build.sh
+
+# Other
+*.log
+*.tmp

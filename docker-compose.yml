@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: mist-webhook-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-mongo_user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongo_password}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mist-webhook-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  webhook-monitor:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: mist-webhook-monitor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "3443:3443"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      # Node Server Settings
+      NODE_HOSTNAME: ${NODE_HOSTNAME:-localhost}
+      NODE_SESSION_SECRET: ${NODE_SESSION_SECRET:-3RMUqsJrX1orvJNBAlrA0KyLqD3fI7/BgiDZ8c8eAto=}
+      NODE_PORT_HTTP: ${NODE_PORT_HTTP:-3000}
+      NODE_HTTPS: ${NODE_HTTPS:-false}
+      NODE_PORT_HTTPS: ${NODE_PORT_HTTPS:-3443}
+
+      # Webhook Collector Settings
+      NODE_WEBHOOK_HOSTNAME: ${NODE_WEBHOOK_HOSTNAME}
+      NODE_WEBHOOK_PORT: ${NODE_WEBHOOK_PORT}
+      NODE_WEBHOOK_NAME: ${NODE_WEBHOOK_NAME:-webhook.mist-lab.fr}
+      NODE_WEBHOOK_HTTPS: ${NODE_WEBHOOK_HTTPS:-false}
+      NODE_WEBHOOK_CERT_CHECK: ${NODE_WEBHOOK_CERT_CHECK:-false}
+
+      # WebSocket Settings
+      NODE_WEBSOCKET_PORT: ${NODE_WEBSOCKET_PORT}
+      NODE_WEBSOCKET_SECURE: ${NODE_WEBSOCKET_SECURE:-false}
+
+      # MongoDB Settings
+      MONGO_HOST: mongodb
+      MONGO_DB: ${MONGO_DB:-webhook_mon}
+      MONGO_USER: ${MONGO_USER:-mongo_user}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:-mongo_password}
+      MONGO_ENC_KEY: ${MONGO_ENC_KEY}
+      MONGO_SIG_KEY: ${MONGO_SIG_KEY}
+
+      # SMTP Settings (optional)
+      SMTP_HOSTNAME: ${SMTP_HOSTNAME}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_REJECT_UNAUTHORIZED: ${SMTP_REJECT_UNAUTHORIZED:-true}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Webhook Mist App}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-wi-fi@corp.org}
+      SMTP_LOGO_URL: ${SMTP_LOGO_URL:-https://cdn.mist.com/wp-content/uploads/logo.png}
+
+      # App Settings
+      APP_DISCLAIMER: ${APP_DISCLAIMER}
+      APP_GITHUB_URL: ${APP_GITHUB_URL}
+      APP_DOCKER_URL: ${APP_DOCKER_URL}
+    volumes:
+      # Optional: Mount config file instead of using environment variables
+      # - ./src/config.js:/app/config.js:ro
+      # Optional: Mount SSL certificates for HTTPS
+      # - ./certs:/app/certs:ro
+    networks:
+      - mist-webhook-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  mist-webhook-network:
+    driver: bridge
