@@ -1,4 +1,5 @@
 const Session = require("./models/session");
+const EventBus = require("./event_bus");
 
 class WebhookPubSub {
     constructor() {
@@ -10,6 +11,10 @@ class WebhookPubSub {
         // }
         this.channels = {};
         this.socket_ids = [];
+
+        EventBus.on('webhook', (data) => {
+            this.publish(data.org_id, data.topic, data.message)
+        })
     }
 
 
